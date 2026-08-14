@@ -1,6 +1,6 @@
 {
   "name": "@cetridr/cetridr",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Cetridr — rule the deep. A single-window command center for your DeepSeek Harness agents.",
   "type": "module",
   "main": "lib/index.js",
