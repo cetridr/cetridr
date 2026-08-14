@@ -55,7 +55,7 @@ jobs:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           VER="${GITHUB_REF_NAME#v}"
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/cetridr/homebrew-cetridr.git" /tmp/tap
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/cetridr/homebrew-tap.git" /tmp/tap
           node scripts/bump-formula.mjs "$VER" /tmp/tap/Formula/cetridr.rb
           cd /tmp/tap
           git config user.name "github-actions[bot]"
