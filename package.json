@@ -1,0 +1,35 @@
+{
+  "name": "@cetridr/cetridr",
+  "version": "0.2.0",
+  "description": "Cetridr — rule the deep. A single-window command center for your DeepSeek Harness agents.",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "cetridr": "lib/cli.js"
+  },
+  "files": [
+    "lib/"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "prepack": "npm run build"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "typescript": "^5.6.0"
+  }
+}

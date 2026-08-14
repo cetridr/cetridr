@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cetridr</title>
+<style>
+  :root {
+    --bg: #0f1115; --bar: #171a21; --card: #1f2430; --edge: #2a2f3a;
+    --text: #e6e8eb; --muted: #8b93a1; --green: #2ea44f; --amber: #d29922;
+    --red: #f85149; --gray: #6e7681; --accent: #4c8dff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  header { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 10px; background: var(--bar); border-bottom: 1px solid var(--edge); }
+  .brand { font-weight: 650; margin-right: 10px; white-space: nowrap; }
+  #tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+  #tabs::-webkit-scrollbar { display: none; }
+  .tab { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9px; cursor: pointer; border: 1px solid transparent; color: var(--muted); white-space: nowrap; user-select: none; }
+  .tab:hover { background: #1c212b; }
+  .tab.active { background: var(--card); color: var(--text); border-color: var(--edge); }
+  .tab.dragging { opacity: .4; }
+  .tab.needs-attention { border-color: var(--amber); animation: attn 1.2s infinite; }
+  @keyframes attn { 50% { box-shadow: 0 0 0 2px var(--amber); } }
+  .tab .label { font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); flex: none; }
+  .dot.running { background: var(--green); }
+  .dot.starting { background: var(--amber); animation: pulse 1s infinite; }
+  .dot.error { background: var(--red); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .att { font-size: 11px; line-height: 1; flex: none; }
+  .att.blocked { color: var(--amber); }
+  .att.working { color: var(--accent); }
+  .tab .act, .tab .rm, .tab .ed { display: none; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 1px; }
+  .tab:hover .act, .tab:hover .rm, .tab:hover .ed { display: inline; }
+  .tab.show-act .act { display: inline; }
+  .tab .rm:hover { color: var(--red); }
+  .tab .ed:hover { color: var(--text); }
+  .iconbtn { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 15px; padding: 4px 6px; border-radius: 7px; }
+  .iconbtn:hover { background: var(--card); color: var(--text); }
+  #stage { position: relative; height: calc(100vh - 48px); }
+  .frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: none; background: #fff; }
+  .frame.active { display: block; }
+  .placeholder { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 14px; color: var(--muted); }
+  .placeholder.active { display: flex; }
+  .placeholder button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 9px 20px; font-size: 14px; cursor: pointer; }
+  .placeholder button:hover { filter: brightness(1.08); }
+
+  #logPanel { position: fixed; left: 0; right: 0; bottom: 0; height: 220px; background: #0b0d12; border-top: 1px solid var(--edge); display: flex; flex-direction: column; }
+  #logPanel.hidden { display: none; }
+  .log-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid var(--edge); }
+  #logBody { margin: 0; padding: 8px 12px; overflow: auto; flex: 1; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; color: #c9d1d9; }
+
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
+  #modal.hidden { display: none; }
+  .modal-box { width: 340px; background: var(--card); border: 1px solid var(--edge); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .modal-box h3 { margin: 0 0 4px; font-size: 15px; }
+  .modal-box label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .modal-box input[type=text], .modal-box input[type=number] { flex: 1; background: #12151c; border: 1px solid var(--edge); color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+  .modal-box input:disabled { opacity: .45; }
+  .modal-box .chk { display: flex; gap: 6px; align-items: center; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+  .modal-actions button { border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; font-size: 13px; }
+  #m_cancel { background: #2a2f3a; color: var(--text); }
+  #m_save { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🧭 Cetridr</div>
+  <nav id="tabs"></nav>
+  <button id="logsBtn" class="iconbtn" title="日志">📄</button>
+  <button id="addBtn" class="iconbtn" title="添加 profile">＋</button>
+</header>
+<main id="stage"></main>
+
+<div id="logPanel" class="hidden">
+  <div class="log-head"><span id="logTitle">日志</span><button id="logClose" class="iconbtn">×</button></div>
+  <pre id="logBody"></pre>
+</div>
+
+<div id="modal" class="hidden">
+  <div class="modal-box">
+    <h3 id="modalTitle">添加 profile</h3>
+    <label>id <input id="f_id" type="text" placeholder="web2"></label>
+    <label>port <input id="f_port" type="number" placeholder="3081"></label>
+    <label>label <input id="f_label" type="text" placeholder="Web 2"></label>
+    <label>emoji <input id="f_emoji" type="text" placeholder="🟢"></label>
+    <label>home <input id="f_home" type="text" placeholder="留空=共享 DSH_HOME，或 web2 / ~/… /绝对路径"></label>
+    <label class="chk"><input id="f_external" type="checkbox"> external（只嵌入，不 spawn）</label>
+    <div class="modal-actions"><button id="m_cancel">取消</button><button id="m_save">保存</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var tabsEl = document.getElementById('tabs');
+  var stage = document.getElementById('stage');
+  var logPanel = document.getElementById('logPanel');
+  var logBody = document.getElementById('logBody');
+  var logTitle = document.getElementById('logTitle');
+  var modal = document.getElementById('modal');
+  var profiles = [];
+  var activeId = null;
+  var els = {};       // id -> { tab, frame, ph, dot, att, act, rm, ed, label }
+  var editingId = null; // null = add mode
+  var dragId = null;
+  var logTimer = null;
+
+  var token = new URLSearchParams(location.search).get('t') || '';
+  function apiOpts() { return { headers: { 'x-cetridr-token': token } }; }
+  function apiOptsPost(body) {
+    return { method: 'POST', headers: { 'x-cetridr-token': token, 'content-type': 'application/json' }, body: JSON.stringify(body || {}) };
+  }
+  function apiOptsPatch(body) {
+    return { method: 'PATCH', headers: { 'x-cetridr-token': token, 'content-type': 'application/json' }, body: JSON.stringify(body || {}) };
+  }
+  function apiOptsDelete() { return { method: 'DELETE', headers: { 'x-cetridr-token': token } }; }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  // ── create one profile's DOM ────────────────────────────────────────────
+  function createProfile(p) {
+    var tab = el('div', 'tab');
+    tab.dataset.id = p.id;
+    tab.draggable = true;
+
+    var emoji = el('span', 'emoji', p.emoji || '·');
+    var label = el('span', 'label', p.label || p.id);
+    var dot = el('span', 'dot stopped');
+    var att = el('span', 'att', '');
+    var ed = el('button', 'ed', '✎');
+    var rm = el('button', 'rm', '×');
+    var act = el('button', 'act', '');
+    tab.appendChild(emoji); tab.appendChild(label); tab.appendChild(dot); tab.appendChild(att); tab.appendChild(ed); tab.appendChild(rm); tab.appendChild(act);
+    tabsEl.appendChild(tab);
+
+    var frame = el('iframe', 'frame');
+    frame.dataset.id = p.id;
+    frame.setAttribute('allow', 'clipboard-write; fullscreen');
+    frame.src = 'http://127.0.0.1:' + p.port + '/';
+    stage.appendChild(frame);
+
+    var ph = el('div', 'placeholder');
+    var msg = el('div', 'msg');
+    var btn = el('button', 'start');
+    ph.appendChild(msg); ph.appendChild(btn);
+    ph.appendChild(el('div', 'hint', '点击启动对应 profile 的 daemon'));
+    stage.appendChild(ph);
+
+    els[p.id] = { tab: tab, frame: frame, ph: ph, dot: dot, att: att, act: act, rm: rm, ed: ed, label: label, msg: msg, btn: btn };
+
+    tab.addEventListener('click', function () { setActive(p.id); });
+    rm.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      if (!confirm('移除 profile ' + p.id + ' ？')) return;
+      fetch('/api/profiles/' + p.id, apiOptsDelete()).then(function (r) { return r.json(); }).then(function (data) {
+        destroyProfile(p.id);
+        profiles = data.profiles || profiles;
+        if (activeId === p.id) setActive(profiles.length ? profiles[0].id : null);
+      });
+    });
+    ed.addEventListener('click', function (ev) { ev.stopPropagation(); openModal(p); });
+    act.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      var s = statusOf(p.id);
+      var verb = (s && s.status === 'running') ? 'stop' : ((s && s.status === 'error') ? 'restart' : 'start');
+      fetch('/api/' + verb + '/' + p.id, apiOptsPost()).then(function () { refresh(); });
+    });
+    btn.addEventListener('click', function () {
+      fetch('/api/start/' + p.id, apiOptsPost()).then(function () { refresh(); });
+    });
+
+    // drag reorder
+    tab.addEventListener('dragstart', function () { dragId = p.id; tab.classList.add('dragging'); });
+    tab.addEventListener('dragend', function () { tab.classList.remove('dragging'); dragId = null; });
+    tab.addEventListener('dragover', function (ev) { ev.preventDefault(); });
+    tab.addEventListener('drop', function () {
+      if (!dragId || dragId === p.id) return;
+      var ids = profiles.map(function (x) { return x.id; });
+      var from = ids.indexOf(dragId);
+      var to = ids.indexOf(p.id);
+      if (from < 0 || to < 0) return;
+      ids.splice(from, 1); ids.splice(to, 0, dragId);
+      reorder(ids);
+    });
+  }
+
+  function destroyProfile(id) {
+    var e = els[id];
+    if (!e) return;
+    e.tab.remove(); e.frame.remove(); e.ph.remove();
+    delete els[id];
+  }
+
+  var statuses = {};
+  function statusOf(id) { return statuses[id]; }
+
+  function setActive(id) {
+    activeId = id;
+    Object.keys(els).forEach(function (k) {
+      var e = els[k];
+      var on = k === id;
+      e.tab.classList.toggle('active', on);
+      e.frame.classList.toggle('active', on);
+      e.ph.classList.toggle('active', false);
+    });
+    refresh();
+  }
+
+  function reorder(ids) {
+    fetch('/api/profiles/reorder', apiOptsPost({ ids: ids })).then(function (r) { return r.json(); }).then(function (data) {
+      profiles = data.profiles || profiles;
+      // move DOM tabs to match order
+      ids.forEach(function (id) {
+        var e = els[id];
+        if (e) tabsEl.appendChild(e.tab);
+      });
+    });
+  }
+
+  // ── modal ───────────────────────────────────────────────────────────────
+  function openModal(p) {
+    editingId = p ? p.id : null;
+    document.getElementById('modalTitle').textContent = p ? '编辑 ' + p.id : '添加 profile';
+    document.getElementById('f_id').value = p ? p.id : '';
+    document.getElementById('f_id').disabled = !!p;
+    document.getElementById('f_port').value = p ? p.port : '';
+    document.getElementById('f_port').disabled = !!p;
+    document.getElementById('f_label').value = p && p.label ? p.label : '';
+    document.getElementById('f_emoji').value = p && p.emoji ? p.emoji : '';
+    document.getElementById('f_home').value = p && p.home ? p.home : '';
+    document.getElementById('f_home').disabled = !!p;
+    document.getElementById('f_external').checked = !!(p && p.external);
+    document.getElementById('f_external').disabled = !!p;
+    modal.classList.remove('hidden');
+  }
+  function closeModal() { modal.classList.add('hidden'); }
+
+  document.getElementById('addBtn').addEventListener('click', function () { openModal(null); });
+  document.getElementById('m_cancel').addEventListener('click', closeModal);
+  document.getElementById('m_save').addEventListener('click', function () {
+    if (!editingId) {
+      var body = {
+        id: document.getElementById('f_id').value.trim(),
+        port: Number(document.getElementById('f_port').value),
+        label: document.getElementById('f_label').value.trim() || undefined,
+        emoji: document.getElementById('f_emoji').value.trim() || undefined,
+        home: document.getElementById('f_home').value.trim() || undefined,
+        external: document.getElementById('f_external').checked || undefined
+      };
+      fetch('/api/profiles', apiOptsPost(body)).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.error) return alert(data.error);
+        profiles = data.profiles || profiles;
+        var p = profiles[profiles.length - 1];
+        createProfile(p);
+        closeModal();
+        setActive(p.id);
+      }).catch(function () { alert('添加失败'); });
+    } else {
+      var patch = {
+        label: document.getElementById('f_label').value.trim() || undefined,
+        emoji: document.getElementById('f_emoji').value.trim() || undefined
+      };
+      fetch('/api/profiles/' + editingId, apiOptsPatch(patch)).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.error) return alert(data.error);
+        profiles = data.profiles || profiles;
+        var e = els[editingId];
+        if (e) e.label.textContent = (profiles.find(function (x) { return x.id === editingId; }) || {}).label || editingId;
+        closeModal();
+      }).catch(function () { alert('保存失败'); });
+    }
+  });
+
+  // ── log viewer ──────────────────────────────────────────────────────────
+  function showLog() {
+    logPanel.classList.remove('hidden');
+    tickLog();
+    if (logTimer) clearInterval(logTimer);
+    logTimer = setInterval(tickLog, 2000);
+  }
+  function hideLog() {
+    logPanel.classList.add('hidden');
+    if (logTimer) { clearInterval(logTimer); logTimer = null; }
+  }
+  function tickLog() {
+    if (!activeId) return;
+    logTitle.textContent = '日志 · ' + activeId;
+    fetch('/api/logs/' + activeId + '?tail=200', apiOpts()).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.text != null) { logBody.textContent = d.text; logBody.scrollTop = logBody.scrollHeight; }
+    }).catch(function () {});
+  }
+  document.getElementById('logsBtn').addEventListener('click', function () {
+    if (logPanel.classList.contains('hidden')) showLog(); else hideLog();
+  });
+  document.getElementById('logClose').addEventListener('click', hideLog);
+
+  // ── status render ───────────────────────────────────────────────────────
+  function render(slist) {
+    statuses = {};
+    (slist || []).forEach(function (s) {
+      statuses[s.id] = s;
+      var e = els[s.id];
+      if (!e) return;
+      e.dot.className = 'dot ' + s.status;
+      var label = (s.status === 'stopped') ? '▶' : ((s.status === 'error') ? '↻' : ((s.status === 'running') ? '⏹' : ''));
+      e.act.textContent = label;
+      e.tab.classList.toggle('show-act', label !== '');
+
+      var att = s.attention;
+      e.att.className = 'att' + (att ? ' ' + att.state : '');
+      e.att.textContent = att ? (att.state === 'blocked' ? '⚠' : (att.state === 'working' ? '…' : '')) : '';
+      e.tab.classList.toggle('needs-attention', !!(att && att.state === 'blocked' && s.id !== activeId));
+
+      var isActive = s.id === activeId;
+      var needPh = isActive && (s.status === 'stopped' || s.status === 'error');
+      e.ph.classList.toggle('active', needPh);
+      if (needPh) {
+        e.msg.textContent = s.status === 'error' ? ((s.label || s.id) + ' 已退出（exit ' + (s.exitCode == null ? '?' : s.exitCode) + '）') : ((s.label || s.id) + ' 未启动');
+        e.btn.textContent = s.status === 'error' ? '↻ 重启' : '▶ 启动';
+      }
+    });
+  }
+
+  function refresh() {
+    fetch('/api/status', apiOpts()).then(function (r) { return r.json(); }).then(function (d) { render(d.profiles || []); }).catch(function () {});
+  }
+
+  // ── boot ────────────────────────────────────────────────────────────────
+  fetch('/api/config', apiOpts()).then(function (r) {
+    if (r.status === 401) {
+      stage.innerHTML = '<div class="placeholder active" style="display:flex"><div>需要 token —— 请用 cetridr start 打印的完整 URL（带 ?t=…）访问</div></div>';
+      throw new Error('unauthorized');
+    }
+    return r.json();
+  }).then(function (cfg) {
+    profiles = cfg.profiles || [];
+    profiles.forEach(createProfile);
+    if (profiles.length) setActive(profiles[0].id);
+    setInterval(refresh, 2000);
+  }).catch(function (err) {
+    if (err && err.message !== 'unauthorized') {
+      stage.innerHTML = '<div class="placeholder active" style="display:flex"><div>无法连接 cetridr API</div></div>';
+    }
+  });
+})();
+</script>
+</body>
+</html>
+
