@@ -1,6 +1,6 @@
 {
   "name": "dsh-whale-rider",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0",
   "description": "Host-side reporter: POST DSH agent lifecycle (working/idle/blocked) back to a cetridr instance.",
   "type": "module",
   "main": "lib/index.js",
