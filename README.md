@@ -30,7 +30,7 @@ brew install cetridr
 brew install ./homebrew/cetridr.rb
 ```
 
-Zero runtime dependencies. Node >= 20.
+Zero runtime dependencies. Node >= 24.
 
 ## Quick start
 

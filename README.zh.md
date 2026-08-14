@@ -29,7 +29,7 @@ brew install cetridr
 brew install ./homebrew/cetridr.rb
 ```
 
-零运行时依赖，Node >= 20。
+零运行时依赖，Node >= 24。
 
 ## 快速开始
 
