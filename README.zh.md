@@ -121,6 +121,10 @@ packages/whale-rider  DSH host 插件：把 agent 生命周期上报回 cetridr
 - [x] M4 分发：launchd/systemd unit 生成（service）；npm 发布待办
 - [ ] 端口自动分配（延后）
 
+## 发布
+
+一次性设置与发版流程见 [PUBLISHING.md](PUBLISHING.md)。
+
 ## License
 
 [MIT](LICENSE)

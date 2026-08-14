@@ -125,6 +125,10 @@ packages/whale-rider  DSH host plugin that reports agent lifecycle back to Cetri
 - [x] M4 distribution: launchd/systemd unit generation (`service`); npm publish pending
 - [ ] Port auto-allocation (deferred)
 
+## Publishing
+
+See [PUBLISHING.md](PUBLISHING.md) for the one-time setup and release flow.
+
 ## License
 
 [MIT](LICENSE)
