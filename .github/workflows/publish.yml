@@ -41,6 +41,7 @@ jobs:
         run: |
           TARBALL=$(npm pack --ignore-scripts --silent 2>/dev/null)
           echo "sha256=$(shasum -a 256 "$TARBALL" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          rm -f "$TARBALL"   # keep the working tree clean for pnpm's git check
 
       - name: Publish @cetridr/cetridr
         run: pnpm publish --provenance --access public
