@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- CI: pass the tarball sha256 from the publish job to the formula bump (no CDN-lag dependency).
+
 ## 0.2.1
 
 - Require Node.js >= 24.
