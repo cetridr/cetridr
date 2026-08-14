@@ -15,6 +15,8 @@ import { loadOrCreateToken } from './auth.js'
 import { Supervisor } from './supervisor.js'
 import { createCetridrServer } from './server.js'
 
+const EXPERIMENTAL_WARNING = '⚠️  experimental: cetridr relies on DSH not sending X-Frame-Options / CSP frame-ancestors — it may break if DSH changes this'
+
 function printUsage(): void {
   console.log('cetridr — rule-them-all command center for DeepSeek Harness profiles')
   console.log('')
@@ -79,6 +81,7 @@ function cmdStart(args: string[]): void {
     child.unref()
     console.log('started (pid ' + child.pid + '), log: ' + outLog)
     console.log('URL: http://' + host + ':' + port + '/?t=' + token)
+    console.error(EXPERIMENTAL_WARNING)
     return
   }
 
@@ -92,6 +95,7 @@ function cmdStart(args: string[]): void {
   const server = createCetridrServer(supervisor, { host, port, token, config: cfg, configPath: configArg, logsDir: logsDir() })
   server.listen(port, host, () => {
     console.log('Cetridr: http://' + host + ':' + port + '/?t=' + token)
+    console.error(EXPERIMENTAL_WARNING)
     for (const p of cfg.profiles) {
       console.log('  ' + (p.emoji || '·') + ' ' + (p.label || p.id) + ' -> http://127.0.0.1:' + p.port)
     }

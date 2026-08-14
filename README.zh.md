@@ -2,6 +2,10 @@
 
 > **Rule the deep.** —— 一个窗口，统率你所有的 DeepSeek Harness agent。
 
+> ⚠️ **实验性。** DeepSeek Harness 本身仍是实验性的（0.1.0-rc.x），而 cetridr 依赖
+> DSH web 服务器不发 X-Frame-Options / Content-Security-Policy: frame-ancestors。
+> 一旦 DSH 开始发这些头，iframe 嵌入就会失效，cetridr 需要换一种嵌入方案。风险自负。
+
 Cetridr 把多个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) profile（每个是
 独立 daemon）并排跑起来，用顶部 header bar 的 tab 切换，内容区用 iframe 嵌入各自的 DSH web UI。
 单用户、本机 loopback 定位。

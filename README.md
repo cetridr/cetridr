@@ -2,6 +2,11 @@
 
 > **Rule the deep.** A single-window command center for your DeepSeek Harness agents.
 
+> ⚠️ **Experimental.** DeepSeek Harness itself is experimental (`0.1.0-rc.x`), and Cetridr relies on
+> DSH's web server not sending `X-Frame-Options` / `Content-Security-Policy: frame-ancestors`.
+> If DSH starts sending those headers, iframe embedding breaks and Cetridr will need a different
+> embedding strategy. Use at your own risk.
+
 Cetridr runs multiple [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) profiles
 (each its own daemon) side by side and switches between them with header-bar tabs, embedding each
 DSH web UI in an iframe. Single-user, loopback-only.
