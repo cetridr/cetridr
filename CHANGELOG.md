@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Require Node.js >= 24.
+- Publish on GitHub Release (`gh release create`) instead of a bare tag.
+- Homebrew tap renamed to `cetridr/tap` (`homebrew-tap` repo).
+
 ## 0.2.0
 
 ### M1 skeleton
