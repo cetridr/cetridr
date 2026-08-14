@@ -9,6 +9,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    outputs:
+      sha256: ${{ steps.tarball.outputs.sha256 }}
     permissions:
       contents: read
       id-token: write   # required for npm trusted publishing (OIDC)
@@ -34,6 +36,12 @@ jobs:
           pnpm run build
           pnpm test
 
+      - name: Compute tarball sha256
+        id: tarball
+        run: |
+          TARBALL=$(npm pack --ignore-scripts --silent 2>/dev/null)
+          echo "sha256=$(shasum -a 256 "$TARBALL" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
       - name: Publish @cetridr/cetridr
         run: pnpm publish --provenance --access public
 
@@ -56,7 +64,7 @@ jobs:
         run: |
           VER="${GITHUB_REF_NAME#v}"
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/cetridr/homebrew-tap.git" /tmp/tap
-          node scripts/bump-formula.mjs "$VER" /tmp/tap/Formula/cetridr.rb
+          node scripts/bump-formula.mjs "$VER" /tmp/tap/Formula/cetridr.rb "${{ needs.publish.outputs.sha256 }}"
           cd /tmp/tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
