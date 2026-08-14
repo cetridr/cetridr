@@ -2,24 +2,25 @@
 
 ## 0.2.0 (unreleased)
 
-### M1 立骨
-- TypeScript 工程化：tsc 构建 + 类型声明 + node:test 单测。
-- CLI：init / start / list / add / rm / status。
-- 配置/数据目录迁到 ~/.cetridr（CETRIDR_HOME 可覆盖）。
-- 配置 schema 校验。
+### M1 skeleton
+- TypeScript build + type declarations + `node:test` unit tests.
+- CLI: init / start / list / add / rm / status.
+- Config & data moved to `~/.cetridr` (`CETRIDR_HOME` overrides).
+- Config schema validation.
 
-### M2 变稳
-- 控制面 token（x-cetridr-token 门禁 /api/*，token 存 ~/.cetridr/token 0600）。
-- 每 profile 日志文件 + logs <id> [--follow]。
-- 崩溃自动重启（指数退避，restartBackoffMs）。
-- 懒启动（spawnAll: false）。
-- start --daemon + stop（pidfile）。
+### M2 reliability
+- Control-plane token (`x-cetridr-token` gates `/api/*`; token at `~/.cetridr/token`, 0600).
+- Per-profile log files + `logs <id> [--follow]`.
+- Crash auto-restart (exponential backoff, `restartBackoffMs`).
+- Lazy start (`spawnAll: false`).
+- `start --daemon` + `stop` (pidfile).
 
-### M3 变好用
-- UI 管理 profile：添加/删除/改名/拖拽排序（动态生效，持久化到 config.json）。
-- 日志查看面板。
-- working/idle/blocked 注意力徽标（经 dsh-cetridr-reporter host 插件上报 /api/report）。
+### M3 usability
+- In-UI profile management: add / remove / rename / drag-to-reorder (persisted to config.json).
+- Log viewer panel.
+- working / idle / blocked attention badges (via `dsh-whale-rider` reporting to `/api/report`).
 
-### M4 分发
-- service 命令：生成 launchd（macOS）/ systemd（Linux）自启动 unit。
-- npm 发布待办（需 npm 账号 + 网络）。
+### M4 distribution
+- `service` command: generate launchd (macOS) / systemd (Linux) units.
+- npm publish via GitHub Actions + OIDC trusted publishing (pending first publish).
+

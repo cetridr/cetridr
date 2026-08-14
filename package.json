@@ -21,11 +21,12 @@
   "engines": {
     "node": ">=20"
   },
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test test/*.test.mjs",
-    "prepack": "npm run build"
+    "prepack": "pnpm run build"
   },
   "license": "MIT",
   "devDependencies": {

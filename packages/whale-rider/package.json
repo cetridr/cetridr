@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && tsdown",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepack": "npm run build"
+    "prepack": "pnpm run build"
   },
   "license": "MIT",
   "peerDependencies": {

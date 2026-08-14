@@ -1,44 +1,48 @@
-# Cetridr 🐚
+# Cetridr 🐋
 
-> **Rule the deep.** — 一个窗口，统率你所有的 DeepSeek Harness agent。
+> **Rule the deep.** A single-window command center for your DeepSeek Harness agents.
 
-把多个 DSH profile（每个是独立 daemon）并排跑起来，顶部 header bar 的 tab 切换，
-内容区用 iframe 嵌入各自的 DSH web UI。单用户、本机 loopback 定位。
+Cetridr runs multiple [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) profiles
+(each its own daemon) side by side and switches between them with header-bar tabs, embedding each
+DSH web UI in an iframe. Single-user, loopback-only.
 
-## 安装
+[中文文档](README.zh.md)
 
-```bash
-npm i -g @cetridr/cetridr   # 装完命令行是 `cetridr`（npx 用 `npx @cetridr/cetridr`）
-```
-
-零运行时依赖，Node >= 20。
-
-## 快速开始
+## Install
 
 ```bash
-cetridr init                          # 生成 ~/.cetridr/config.json
-cetridr add web --port 3080 --external # 嵌入已运行的 3080
-cetridr add web2 --port 3081 --home web2  # spawn 到独立 DSH_HOME
-cetridr start                         # 前台运行；打印带 token 的 URL（?t=…），用那个打开
-cetridr start --daemon                 # 后台运行（cetridr stop 停止）
+pnpm add -g @cetridr/cetridr   # CLI binary: cetridr
 ```
 
-## 命令
+Zero runtime dependencies. Node >= 20.
 
-| 命令 | 作用 |
+## Quick start
+
+```bash
+cetridr init                          # create ~/.cetridr/config.json
+cetridr add web --port 3080 --external # embed the already-running 3080
+cetridr add web2 --port 3081 --home web2  # spawn into an isolated DSH_HOME
+cetridr start                         # foreground; prints the tokenized URL (?t=…) — open that
+cetridr start --daemon                # background (cetridr stop to stop)
+```
+
+## Commands
+
+| Command | Description |
 | --- | --- |
-| init | 生成默认配置文件 |
-| start [--config <path>] [--daemon] | 运行门户（前台或后台） |
-| stop | 停止后台运行的门户（pidfile） |
-| list | 列出已配置的 profile |
-| add <id> --port <n> [--label --emoji --home --external] | 添加 profile |
-| rm <id> | 移除 profile |
-| status | 查看运行中门户的状态 |
-| logs <id> [--follow] | 查看（或跟踪）某 profile 日志 |
+| init | create the default config file |
+| start [--config <path>] [--daemon] | run the portal (foreground or detached) |
+| stop | stop a daemonized portal (via pidfile) |
+| list | list configured profiles |
+| add <id> --port <n> [--label --emoji --home --external] | add a profile |
+| rm <id> | remove a profile |
+| status | show runtime status of a running portal |
+| logs <id> [--follow] | print (and optionally tail) a profile log |
+| service | print a launchd/systemd unit to run at login |
 
-## 配置
+## Configuration
 
-配置在 ~/.cetridr/config.json（可用环境变量 CETRIDR_HOME 覆盖整个目录）：
+Config lives at `~/.cetridr/config.json` (override the whole home dir with `CETRIDR_HOME`):
 
 ```json
 {
@@ -46,6 +50,8 @@ cetridr start --daemon                 # 后台运行（cetridr stop 停止）
   "port": 4000,
   "dshBin": "dsh",
   "spawnAll": true,
+  "restart": true,
+  "restartBackoffMs": 1000,
   "profiles": [
     { "id": "web", "port": 3080, "external": true },
     { "id": "web2", "port": 3081, "home": "web2" }
@@ -53,62 +59,72 @@ cetridr start --daemon                 # 后台运行（cetridr stop 停止）
 }
 ```
 
-- host / port：门户监听地址（默认 127.0.0.1:4000）。
-- dshBin：dsh 可执行文件（默认 dsh）。
-- spawnAll：启动时是否一次性拉起全部 profile（默认 true；false = 点 tab 才启动）。
-- restart：子进程崩溃后自动重启（默认 true）；restartBackoffMs：首次重启退避毫秒（默认 1000，逐次翻倍、上限 30s）。
-- 安全：所有 /api/* 需 x-cetridr-token（token 存在 ~/.cetridr/token，0600）；start 会打印带 ?t=<token> 的完整 URL。
-- profiles[].port：该 profile 的固定端口；profiles[].external 为 true 时不 spawn、只嵌入已有 URL。
-- profiles[].home：该 profile 的 DSH_HOME。相对路径相对于 ~/.cetridr/homes，~ 或绝对路径按原样。
-  不设 home 时继承门户进程的 DSH_HOME（即共享状态）。
-- profiles[].command：可选，完全替换默认命令 dsh --profile <id> --port <port>（{port}/{id} 会被替换）。
+- `host` / `port` — the portal listen address (default `127.0.0.1:4000`).
+- `dshBin` — the `dsh` executable (default `dsh`).
+- `spawnAll` — spawn every profile at startup (default `true`; `false` = spawn on tab click).
+- `restart` — auto-restart a crashed child with exponential backoff (default `true`);
+  `restartBackoffMs` is the first backoff delay (doubles each attempt, capped at 30s).
+- `profiles[].port` — the profile's fixed port; `external: true` means don't spawn, just embed the URL.
+- `profiles[].home` — the profile's `DSH_HOME`. Relative paths resolve against `~/.cetridr/homes`;
+  `~` or absolute paths are used as-is. Omit to inherit the portal's `DSH_HOME` (shared state).
+- `profiles[].command` — optional; fully replaces the default `dsh --profile <id> --port <port>`
+  (`{port}` / `{id}` are substituted).
+- Security: every `/api/*` request must carry `x-cetridr-token` (token at `~/.cetridr/token`, `0600`);
+  `start` prints the full URL with `?t=<token>`.
 
-### 真隔离 vs 共享状态
+### Isolation vs shared state
 
-DSH 用 DSH_HOME 这一个环境变量决定整个 home（profiles/sessions/storages/settings/credentials）。
-要每个 tab 独立数据，给每个 profile 设独立的 home；要共享数据就不设。
+DSH keys its entire home (profiles / sessions / storages / settings / credentials) off the single
+`DSH_HOME` env var. Give each profile its own `home` for independent data per tab; omit it to share.
 
-### 注意力徽标（working/idle/blocked）
+### Attention badges (working / idle / blocked)
 
-每个 DSH daemon 里装 [packages/whale-rider](packages/whale-rider)（`dsh-whale-rider`）host 插件，它把
-agent 生命周期上报回 cetridr 的 /api/report；cetridr 在 tab 上显示 working/idle/blocked，
-blocked（待审批）且非活动 tab 会高亮。cetridr 派生子进程时已注入
-CETRIDR_URL / CETRIDR_ID / CETRIDR_TOKEN，插件据此上报。
+Install the [whale-rider](packages/whale-rider) host plugin inside each DSH daemon; it reports the
+agent lifecycle back to Cetridr's `/api/report`, which shows working / idle / blocked on the tab and
+highlights a blocked, non-active tab. Cetridr injects `CETRIDR_URL` / `CETRIDR_ID` / `CETRIDR_TOKEN`
+into spawned children; the plugin reports via those.
 
-## 开发
+## Development
 
 ```bash
-npm install          # 安装 typescript + @types/node
-npm run build        # tsc -> lib/ + 拷贝 cetridr.html
-npm test             # node --test test/*.test.mjs
-npm run typecheck
+pnpm install                          # install workspace deps
+pnpm run build                        # tsc -> lib/ + copy cetridr.html
+pnpm test                             # node --test test/*.test.mjs
+pnpm run typecheck
+pnpm --filter dsh-whale-rider run build
 ```
 
-源码在 src/（TypeScript，ESM），构建产物在 lib/（已 gitignore）。
+Source in `src/` (TypeScript, ESM); build output in `lib/` (gitignored).
 
-## 为什么用 iframe 可行
+## Why iframe embedding works
 
-- DSH web 服务器不发 X-Frame-Options / Content-Security-Policy: frame-ancestors，允许被嵌入。
-- DSH 的 /api 信任栅栏只看 Host 是否为 loopback（无 cookie/认证层），iframe src 直指 DSH 时同源、Host=127.0.0.1:<port> 自然通过。
-- 每个 profile 用 --port 固定端口，门户健康检查轮询 http://127.0.0.1:<port>/。
+- DSH's web server sends no `X-Frame-Options` / `Content-Security-Policy: frame-ancestors`, so it can be embedded.
+- DSH's `/api` trust fence only checks that `Host` is loopback (no cookie/auth layer); an iframe whose
+  `src` points straight at DSH is same-origin, so `Host=127.0.0.1:<port>` passes — no third-party cookies.
+- Each profile uses `--port` for a fixed port; the portal health-checks `http://127.0.0.1:<port>/`.
 
-## 架构
+## Architecture
 
 ```
-src/cli.ts        命令行入口（init/start/list/add/rm/status）
-src/config.ts     配置 schema + 校验 + 读写 + home 解析
-src/paths.ts      CETRIDR_HOME / 数据目录解析
-src/supervisor.ts 进程监督：spawn/stop/restart + 健康检查 + 自动重启退避 + 日志
-src/server.ts     HTTP：门户页 + /api/config + /api/status + /api/{start,stop,restart}/:id（token 门禁）
-src/auth.ts       token 生成/持久化 + x-cetridr-token 校验
-src/logger.ts     每 profile 的带时间戳日志文件
-src/cetridr.html   header tab + iframe 切换的前端（零依赖）
+src/cli.ts        CLI entry (init/start/stop/list/add/rm/status/logs/service)
+src/config.ts     config schema + validation + read/write + home resolution
+src/paths.ts      CETRIDR_HOME / data-dir resolution
+src/supervisor.ts process supervision: spawn/stop/restart + health + auto-restart backoff
+src/server.ts     HTTP: portal page + /api/config + /api/status + /api/{start,stop,restart}/:id
+src/auth.ts       token generation/persistence + x-cetridr-token check
+src/logger.ts     per-profile timestamped log files
+src/cetridr.html  header tabs + iframe switching frontend (zero deps)
+packages/whale-rider  DSH host plugin that reports agent lifecycle back to Cetridr
 ```
 
-## 路线图
+## Roadmap
 
-- [x] M1 立骨：TS 工程化、CLI、配置/数据目录、schema 校验、单测
-- [x] M2 变稳：daemon 化、自动重启退避、懒启动、日志聚合 + logs 命令、控制面 token（端口自动分配延后）
-- [x] M3 变好用：UI 管理 profile（增删/改名/拖拽排序）、日志面板、working/idle/blocked 徽标（经 dsh-whale-rider）
-- [x] M4 分发：launchd/systemd unit 生成（`service` 命令）；npm publish 待账号
+- [x] M1 skeleton: TypeScript, CLI, config/data dirs, schema validation, unit tests
+- [x] M2 reliability: daemonize, auto-restart backoff, lazy start, log aggregation, control-plane token
+- [x] M3 usability: in-UI profile management, log viewer, working/idle/blocked badges (via whale-rider)
+- [x] M4 distribution: launchd/systemd unit generation (`service`); npm publish pending
+- [ ] Port auto-allocation (deferred)
 
+## License
+
+[MIT](LICENSE)
