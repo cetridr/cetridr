@@ -18,6 +18,17 @@ Cetridr 把多个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-har
 pnpm add -g @cetridr/cetridr   # 命令行：cetridr
 ```
 
+### Homebrew
+
+```bash
+# 从 tap 安装（formula 在本仓库 homebrew/cetridr.rb）
+brew tap cetridr/homebrew-cetridr
+brew install cetridr
+
+# 或直接用 formula 文件安装
+brew install ./homebrew/cetridr.rb
+```
+
 零运行时依赖，Node >= 20。
 
 ## 快速开始

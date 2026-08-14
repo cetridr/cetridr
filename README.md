@@ -19,6 +19,17 @@ DSH web UI in an iframe. Single-user, loopback-only.
 pnpm add -g @cetridr/cetridr   # CLI binary: cetridr
 ```
 
+### Homebrew
+
+```bash
+# from a tap (the formula lives in this repo at homebrew/cetridr.rb)
+brew tap cetridr/homebrew-cetridr
+brew install cetridr
+
+# or directly from the formula file
+brew install ./homebrew/cetridr.rb
+```
+
 Zero runtime dependencies. Node >= 20.
 
 ## Quick start
