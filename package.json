@@ -29,6 +29,10 @@
     "prepack": "pnpm run build"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cetridr/cetridr.git"
+  },
   "devDependencies": {
     "@types/node": "^22.20.0",
     "typescript": "^5.6.0"

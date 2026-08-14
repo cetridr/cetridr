@@ -23,6 +23,11 @@
     "prepack": "pnpm run build"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cetridr/cetridr.git",
+    "directory": "packages/whale-rider"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1"
   },
