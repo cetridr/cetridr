@@ -15,7 +15,8 @@ header tab 上显示 working / idle / blocked 徽标（以及「需要你注意�
 
 ## 安装
 
-1. 装进 profile：`dsh plugin --profile <name> add ./dsh-whale-rider`
+1. 装进 profile（发布后）：`dsh plugin --profile <name> add dsh-whale-rider`；
+   本地源码装：`dsh plugin --profile <name> add ./packages/whale-rider`
 2. 在 profile 的 cordis.patch.yml 加一行：
 
 ```yaml
