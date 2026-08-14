@@ -33,13 +33,13 @@ jobs:
           pnpm test
 
       - name: Publish @cetridr/cetridr
-        run: pnpm publish --provenance --access public
+        run: pnpm publish --provenance --access public --no-git-checks
 
       - name: Build dsh-whale-rider
         run: pnpm --filter dsh-whale-rider run build
 
       - name: Publish dsh-whale-rider
-        run: pnpm --filter dsh-whale-rider publish --provenance --access public
+        run: pnpm --filter dsh-whale-rider publish --provenance --access public --no-git-checks
 
   update-formula:
     needs: publish
