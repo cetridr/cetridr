@@ -45,14 +45,17 @@ Recommended: enable **Require two-factor authentication and disallow tokens**.
 After the one-time setup, publishing is fully automated:
 
 ```bash
-# 1. bump both package.json versions to the same number (e.g. 0.2.0)
-# 2. commit + tag + push
-git add -A && git commit -m "chore: v0.2.0"
-git tag v0.2.0 && git push origin v0.2.0
+# 1. bump both package.json versions to the same number (e.g. 0.2.1)
+# 2. commit + push
+git add -A && git commit -m "chore: v0.2.1"
+git push origin main
+# 3. create the GitHub Release (this also creates the tag and triggers the workflow)
+gh release create v0.2.1 --generate-notes
 ```
 
-The tag push triggers `.github/workflows/publish.yml`, which installs, builds, tests, and publishes
-both packages via OIDC trusted publishing — no token, with provenance attestations.
+Publishing the Release triggers `.github/workflows/publish.yml`, which checks out `main`, installs,
+builds, tests, and publishes both packages via OIDC trusted publishing — no token, with provenance —
+then bumps the Homebrew formula.
 
 ## Note: scoped-package alternative
 

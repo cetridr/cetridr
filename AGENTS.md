@@ -61,6 +61,7 @@ pnpm --filter dsh-whale-rider run build   # tsc (declarations) + tsdown (bundle)
 
 ## Publishing
 
-See [PUBLISHING.md](PUBLISHING.md). Release = bump both `package.json` versions, commit, tag `vX.Y.Z`,
-push; GitHub Actions publishes both via OIDC trusted publishing.
+See [PUBLISHING.md](PUBLISHING.md). Release = bump both `package.json` versions, commit, push, then
+`gh release create vX.Y.Z`; GitHub Actions publishes both via OIDC trusted publishing and bumps the
+Homebrew formula.
 
