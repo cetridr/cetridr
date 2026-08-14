@@ -14,6 +14,8 @@ jobs:
       id-token: write   # required for npm trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # check out the branch (not the detached tag) so pnpm's git check passes
 
       - uses: pnpm/action-setup@v4
         with:
@@ -33,13 +35,13 @@ jobs:
           pnpm test
 
       - name: Publish @cetridr/cetridr
-        run: pnpm publish --provenance --access public --no-git-checks
+        run: pnpm publish --provenance --access public
 
       - name: Build dsh-whale-rider
         run: pnpm --filter dsh-whale-rider run build
 
       - name: Publish dsh-whale-rider
-        run: pnpm --filter dsh-whale-rider publish --provenance --access public --no-git-checks
+        run: pnpm --filter dsh-whale-rider publish --provenance --access public
 
   update-formula:
     needs: publish
