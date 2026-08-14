@@ -11,12 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write   # required for npm trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24   # bundles npm >= 11.5.1, required for OIDC publish
           registry-url: 'https://registry.npmjs.org'
 
       - name: Build and test @cetridr/cetridr
@@ -26,9 +27,7 @@ jobs:
           npm test
 
       - name: Publish @cetridr/cetridr
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Build dsh-whale-rider
         working-directory: packages/whale-rider
@@ -38,6 +37,4 @@ jobs:
 
       - name: Publish dsh-whale-rider
         working-directory: packages/whale-rider
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
