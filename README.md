@@ -70,7 +70,7 @@ DSH 用 DSH_HOME 这一个环境变量决定整个 home（profiles/sessions/stor
 
 ### 注意力徽标（working/idle/blocked）
 
-每个 DSH daemon 里装 [../dsh-cetridr-reporter](../dsh-cetridr-reporter) host 插件，它把
+每个 DSH daemon 里装 [packages/whale-rider](packages/whale-rider)（`dsh-whale-rider`）host 插件，它把
 agent 生命周期上报回 cetridr 的 /api/report；cetridr 在 tab 上显示 working/idle/blocked，
 blocked（待审批）且非活动 tab 会高亮。cetridr 派生子进程时已注入
 CETRIDR_URL / CETRIDR_ID / CETRIDR_TOKEN，插件据此上报。
@@ -109,6 +109,6 @@ src/cetridr.html   header tab + iframe 切换的前端（零依赖）
 
 - [x] M1 立骨：TS 工程化、CLI、配置/数据目录、schema 校验、单测
 - [x] M2 变稳：daemon 化、自动重启退避、懒启动、日志聚合 + logs 命令、控制面 token（端口自动分配延后）
-- [x] M3 变好用：UI 管理 profile（增删/改名/拖拽排序）、日志面板、working/idle/blocked 徽标（经 dsh-cetridr-reporter）
+- [x] M3 变好用：UI 管理 profile（增删/改名/拖拽排序）、日志面板、working/idle/blocked 徽标（经 dsh-whale-rider）
 - [x] M4 分发：launchd/systemd unit 生成（`service` 命令）；npm publish 待账号
 
