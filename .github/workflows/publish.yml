@@ -9,10 +9,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    outputs:
-      sha256: ${{ steps.tarball.outputs.sha256 }}
     permissions:
-      contents: read
+      contents: write  # upload the tarball as a release asset
       id-token: write   # required for npm trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
@@ -36,13 +34,6 @@ jobs:
           pnpm run build
           pnpm test
 
-      - name: Compute tarball sha256
-        id: tarball
-        run: |
-          TARBALL=$(npm pack --ignore-scripts --silent 2>/dev/null)
-          echo "sha256=$(shasum -a 256 "$TARBALL" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
-          rm -f "$TARBALL"   # keep the working tree clean for pnpm's git check
-
       - name: Publish @cetridr/cetridr
         run: pnpm publish --provenance --access public
 
@@ -51,6 +42,19 @@ jobs:
 
       - name: Publish dsh-whale-rider
         run: pnpm --filter dsh-whale-rider publish --provenance --access public
+
+      # Homebrew hashes the exact file at the formula's url, so publish the
+      # same tarball as a GitHub Release asset and let GitHub compute its
+      # sha256. The update-formula job reads that digest from release metadata
+      # (gh release view --json assets) — no npm-CDN fetch, no re-pack drift.
+      - name: Upload tarball as release asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pnpm pack --pack-destination /tmp >/dev/null
+          TARBALL=$(ls /tmp/cetridr-*.tgz)
+          gh release upload "${GITHUB_REF_NAME}" "$TARBALL" --clobber
 
   update-formula:
     needs: publish
@@ -62,10 +66,11 @@ jobs:
       - name: Bump Homebrew formula
         env:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           VER="${GITHUB_REF_NAME#v}"
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/cetridr/homebrew-tap.git" /tmp/tap
-          node scripts/bump-formula.mjs "$VER" /tmp/tap/Formula/cetridr.rb "${{ needs.publish.outputs.sha256 }}"
+          node scripts/bump-formula.mjs "$VER" /tmp/tap/Formula/cetridr.rb
           cd /tmp/tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

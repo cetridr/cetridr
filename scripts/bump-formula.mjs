@@ -1,41 +1,58 @@
 #!/usr/bin/env node
 // Bump the Homebrew formula's url + sha256 for a new cetridr release.
-// usage: node scripts/bump-formula.mjs <version> <formula-path> [sha256]
 //
-// When [sha256] is provided (computed by the publish job from the same tarball
-// it uploads), it is used directly — no network fetch. Otherwise the script
-// downloads the published tarball, retrying because the registry CDN can lag.
+// usage: node scripts/bump-formula.mjs <version> <formula-path>
+//
+// Source of truth is the tarball the publish job uploaded to the GitHub
+// Release as an asset. GitHub computes an sha256 digest for every release
+// asset and exposes it via `gh release view --json assets` (the "digest"
+// field, prefixed "sha256:"). We read that digest instead of downloading
+// anything, so there is no npm-CDN lag and no non-reproducible local re-pack.
+// This is the same pattern goreleaser and the wider Homebrew-tap ecosystem
+// use: hash the exact artifact you publish, and never a mirror.
 
-import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 
-const [version, formulaPath, providedSha256] = process.argv.slice(2)
+const [version, formulaPath] = process.argv.slice(2)
 if (!version || !formulaPath) {
-  console.error('usage: node scripts/bump-formula.mjs <version> <formula-path> [sha256]')
+  console.error('usage: node scripts/bump-formula.mjs <version> <formula-path>')
   process.exit(1)
 }
 
-const tarball = 'https://registry.npmjs.org/@cetridr/cetridr/-/cetridr-' + version + '.tgz'
-const sha256 = providedSha256 || await downloadSha256(tarball)
+const repo = process.env.CETRIDR_REPO ?? 'cetridr/cetridr'
+const tag = 'v' + version
+
+const { assetName, sha256 } = releaseAsset(repo, tag)
+const url = 'https://github.com/' + repo + '/releases/download/' + tag + '/' + assetName
 
 const formula = readFileSync(formulaPath, 'utf8')
 const updated = formula
-  .replace(/url "[^"]*"/, 'url "' + tarball + '"')
+  .replace(/url "[^"]*"/, 'url "' + url + '"')
   .replace(/sha256 "[^"]*"/, 'sha256 "' + sha256 + '"')
 writeFileSync(formulaPath, updated)
 
-console.log('bumped formula to ' + version + ' sha256=' + sha256)
+console.log('bumped formula to ' + version + ' sha256=' + sha256 + ' url=' + url)
 
-async function downloadSha256(url) {
-  for (let i = 0; i < 12; i++) {
-    const res = await fetch(url)
-    if (res.ok) {
-      return createHash('sha256').update(Buffer.from(await res.arrayBuffer())).digest('hex')
-    }
-    if (res.status === 404 && i < 11) {
-      await new Promise((r) => setTimeout(r, 5000))
-      continue
-    }
-    throw new Error('tarball fetch failed: ' + res.status + ' ' + url)
+function releaseAsset(repo, tag) {
+  let json
+  try {
+    json = execFileSync(
+      'gh',
+      ['release', 'view', tag, '--repo', repo, '--json', 'assets'],
+      { encoding: 'utf8' }
+    )
+  } catch (err) {
+    throw new Error('gh release view ' + tag + ' failed: ' + err.message)
   }
+  const { assets } = JSON.parse(json)
+  const asset = assets.find((a) => a.name.endsWith('.tgz'))
+  if (!asset) {
+    throw new Error('release ' + tag + ' has no .tgz asset; upload it before bumping the formula')
+  }
+  const digest = asset.digest ?? ''
+  if (!digest.startsWith('sha256:')) {
+    throw new Error('asset ' + asset.name + ' has no sha256 digest (got "' + digest + '")')
+  }
+  return { assetName: asset.name, sha256: digest.slice('sha256:'.length) }
 }
