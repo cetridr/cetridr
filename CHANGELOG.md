@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+- Homebrew formula sha256 now comes from the GitHub Release asset digest (no npm-CDN fetch or retry).
+
 ## 0.2.2
 
 - CI: pass the tarball sha256 from the publish job to the formula bump (no CDN-lag dependency).
@@ -33,4 +37,3 @@
 ### M4 distribution
 - `service` command: generate launchd (macOS) / systemd (Linux) units.
 - npm publish via GitHub Actions + OIDC trusted publishing (pending first publish).
-
